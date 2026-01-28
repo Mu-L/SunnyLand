@@ -74,6 +74,12 @@ public:
     void run();
 
     /**
+     * @brief 执行一次游戏循环迭代。
+     *        为了支持 Emscripten (WebAssembly)，主循环体必须提取到单独的函数中。
+     */
+    void oneIter();
+
+    /**
      * @brief 注册用于设置初始游戏场景的函数。
      *        这个函数将在 SceneManager 初始化后被调用。
      * @param func 一个接收 SceneManager 引用的函数对象。

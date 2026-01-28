@@ -25,25 +25,50 @@ GameApp::~GameApp() {
     }
 }
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 void GameApp::run() {
     if (!init()) {
         spdlog::error("GameApp 初始化失败，无法运行游戏。");
         return;
     }
 
+#ifdef __EMSCRIPTEN__
+    // WebAssembly 环境下使用回调函数
+    // 0 表示无限帧率(由浏览器 requestAnimationFrame 控制)，1 表示模拟无限循环
+    emscripten_set_main_loop_arg([](void* arg) {
+        static_cast<GameApp*>(arg)->oneIter();
+    }, this, 0, 1);
+#else
+    // 桌面环境下使用标准的 while 循环
     while (is_running_) {
-        time_->update();
-        float delta_time = time_->getDeltaTime();
-        input_manager_->update();   // 每帧首先更新输入管理器
-        
-        handleEvents();
-        update(delta_time);
-        render();
-
-        // spdlog::info("delta_time: {}", delta_time);
+        oneIter();
     }
-
     close();
+#endif
+}
+
+void GameApp::oneIter() {
+    if (!is_running_) return; // 防止在退出标志设置后的额外调用
+
+    time_->update();
+    float delta_time = time_->getDeltaTime();
+    input_manager_->update();   // 每帧首先更新输入管理器
+    
+    handleEvents();
+    update(delta_time);
+    render();
+
+    // spdlog::info("delta_time: {}", delta_time);
+
+#ifdef __EMSCRIPTEN__
+    if (!is_running_) {
+        emscripten_cancel_main_loop();
+        close();
+    }
+#endif
 }
 
 void GameApp::registerSceneSetup(std::function<void(engine::scene::SceneManager &)> func)

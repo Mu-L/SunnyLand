@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>SunnyLand</title>
+    <style>
+      body { 
+        margin: 0; 
+        padding: 0;
+        background-color: #000; 
+        overflow: hidden; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        width: 100vw;
+      }
+      canvas.emscripten { 
+        border: 0px none; 
+        background-color: #000; 
+        display: block;
+        /* Maximize keeping aspect ratio could be handled by game code, 
+           but here we just center it. 
+           If the game resizes the canvas, it will stay centered */
+      }
+    </style>
+  </head>
+  <body>
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    <script type='text/javascript'>
+      var Module = {
+        preRun: [],
+        postRun: [],
+        print: (function() {
+          return function(text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            console.log(text);
+          };
+        })(),
+        printErr: function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          console.error(text);
+        },
+        canvas: (function() {
+          var canvas = document.getElementById('canvas');
+          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+          return canvas;
+        })(),
+        setStatus: function(text) {
+            if (text) console.log(text);
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+        }
+      };
+      window.onerror = function(event) {
+        console.error("Exception thrown: ", event);
+      };
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>
