@@ -36,6 +36,7 @@ void GameApp::run() {
     }
 
 #ifdef __EMSCRIPTEN__
+    web_main_loop_cancelled_ = false;
     // WebAssembly 环境下使用回调函数
     // 0 表示无限帧率(由浏览器 requestAnimationFrame 控制)，1 表示模拟无限循环
     emscripten_set_main_loop_arg([](void* arg) {
@@ -51,24 +52,50 @@ void GameApp::run() {
 }
 
 void GameApp::oneIter() {
+#ifdef __EMSCRIPTEN__
+    if (!is_running_) {
+        if (!web_main_loop_cancelled_) {
+            emscripten_cancel_main_loop();
+            web_main_loop_cancelled_ = true;
+            close();
+        }
+        return;
+    }
+#else
     if (!is_running_) return; // 防止在退出标志设置后的额外调用
+#endif
 
     time_->update();
     float delta_time = time_->getDeltaTime();
     input_manager_->update();   // 每帧首先更新输入管理器
     
     handleEvents();
+    if (!is_running_) {
+#ifdef __EMSCRIPTEN__
+        if (!web_main_loop_cancelled_) {
+            emscripten_cancel_main_loop();
+            web_main_loop_cancelled_ = true;
+            close();
+        }
+#endif
+        return;
+    }
+
     update(delta_time);
+    if (!is_running_) {
+#ifdef __EMSCRIPTEN__
+        if (!web_main_loop_cancelled_) {
+            emscripten_cancel_main_loop();
+            web_main_loop_cancelled_ = true;
+            close();
+        }
+#endif
+        return;
+    }
+
     render();
 
     // spdlog::info("delta_time: {}", delta_time);
-
-#ifdef __EMSCRIPTEN__
-    if (!is_running_) {
-        emscripten_cancel_main_loop();
-        close();
-    }
-#endif
 }
 
 void GameApp::registerSceneSetup(std::function<void(engine::scene::SceneManager &)> func)

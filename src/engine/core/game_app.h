@@ -46,6 +46,9 @@ private:
     SDL_Window* window_ = nullptr;
     SDL_Renderer* sdl_renderer_ = nullptr;
     bool is_running_ = false;
+#ifdef __EMSCRIPTEN__
+    bool web_main_loop_cancelled_ = false;
+#endif
 
     /// @brief 游戏场景设置函数，用于在运行游戏前设置初始场景 (GameApp不再决定初始场景是什么)
     std::function<void(engine::scene::SceneManager&)> scene_setup_func_;
